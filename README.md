@@ -57,9 +57,11 @@ verifyResult = sm2.verifyPublicKey(compressedPublicKey) // 验证公钥
 ```js
 import { sm2 } from 'sm-crypto-v2'
 const cipherMode = 1 // 1 - C1C3C2，0 - C1C2C3，默认为1
+// 支持使用 asn1 对加密结果进行编码，在 options 参数中传入 { asn1: true } 即可，默认不开启
+let encryptData = sm2.doEncrypt(msgString, publicKey, cipherMode, { asn1: false }) // 加密结果
 
-let encryptData = sm2.doEncrypt(msgString, publicKey, cipherMode) // 加密结果
-let decryptData = sm2.doDecrypt(encryptData, privateKey, cipherMode) // 解密结果
+// 支持使用 asn1 对密文进行解码再解密，在 options 参数中传入 { asn1: true } 即可，默认不开启
+let decryptData = sm2.doDecrypt(encryptData, privateKey, cipherMode, { asn1: false }) // 解密结果
 
 encryptData = sm2.doEncrypt(msgArray, publicKey, cipherMode) // 加密结果，输入数组
 decryptData = sm2.doDecrypt(encryptData, privateKey, cipherMode, {output: 'array'}) // 解密结果，输出数组

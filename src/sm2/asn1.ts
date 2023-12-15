@@ -2,6 +2,7 @@
 
 import * as utils from '@noble/curves/abstract/utils';
 import { ONE } from './bn';
+import { utf8ToHex } from './utils';
 
 export function bigintToValue(bigint: bigint) {
   let h = bigint.toString(16)
@@ -81,6 +82,20 @@ class DERInteger extends ASN1Object {
   }
 }
 
+class DEROctetString extends ASN1Object {
+  public hV: string = ''
+  constructor(public s: string) {
+    super()
+
+    this.t = '04' // octstr 标签说明
+    if (s) this.v = s.toLowerCase()
+  }
+
+  getValue() {
+    return this.v
+  }
+}
+
 class DERSequence extends ASN1Object {
   public t = '30'
   constructor(public asn1Array: ASN1Object[]) {
@@ -134,6 +149,14 @@ export function encodeDer(r: bigint, s: bigint) {
   return derSeq.getEncodedHex()
 }
 
+export function encodeEnc(x: bigint, y: bigint, hash: string, cipher: string) {
+  const derX = new DERInteger(x)
+  const derY = new DERInteger(y)
+  const derHash = new DEROctetString(hash)
+  const derCipher = new DEROctetString(cipher)
+  const derSeq = new DERSequence([derX, derY, derHash, derCipher])
+  return derSeq.getEncodedHex()
+}
 /**
  * 解析 ASN.1 der，针对 sm2 验签
  */
@@ -145,7 +168,7 @@ export function decodeDer(input: string) {
 
   const vIndexR = getStartOfV(input, start)
   const lR = getL(input, start)
-  const vR = input.substr(vIndexR, lR * 2)
+  const vR = input.substring(vIndexR, vIndexR +lR * 2)
 
   const nextStart = vIndexR + vR.length
   const vIndexS = getStartOfV(input, nextStart)
@@ -158,4 +181,30 @@ export function decodeDer(input: string) {
   const s = utils.hexToNumber(vS)
 
   return { r, s }
+}
+
+/**
+ * 解析 ASN.1 der，针对 sm2 加密
+ */
+export function decodeEnc(input: string) {
+  // Extracts a sequence from the input based on the current start index.
+  function extractSequence(input: string, start: number): { value: string; nextStart: number } {
+    const vIndex = getStartOfV(input, start);
+    const length = getL(input, start);
+    const value = input.substring(vIndex, vIndex + length * 2);
+    const nextStart = vIndex + value.length;
+    return { value, nextStart };
+  }
+
+  const start = getStartOfV(input, 0);
+
+  const { value: vR, nextStart: startS } = extractSequence(input, start);
+  const { value: vS, nextStart: startHash } = extractSequence(input, startS);
+  const { value: hash, nextStart: startCipher } = extractSequence(input, startHash);
+  const { value: cipher } = extractSequence(input, startCipher);
+
+  const x = utils.hexToNumber(vR);
+  const y = utils.hexToNumber(vS);
+
+  return { x, y, hash, cipher };
 }

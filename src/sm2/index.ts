@@ -1,5 +1,5 @@
 /* eslint-disable no-use-before-define */
-import { encodeDer, decodeDer } from './asn1'
+import { encodeDer, decodeDer, encodeEnc, decodeEnc } from './asn1'
 import { arrayToHex, arrayToUtf8, generateKeyPairHex, hexToArray, leftPad, utf8ToHex } from './utils'
 import { sm3 } from './sm3'
 import * as utils from '@noble/curves/abstract/utils';
@@ -18,7 +18,9 @@ export const EmptyArray = new Uint8Array()
 /**
  * 加密
  */
-export function doEncrypt(msg: string | Uint8Array, publicKey: string | ProjPointType<bigint>, cipherMode = 1) {
+export function doEncrypt(msg: string | Uint8Array, publicKey: string | ProjPointType<bigint>, cipherMode = 1, options?: {
+  asn1?: boolean // 使用 ASN.1 对 C1 编码
+}) {
 
   const msgArr = typeof msg === 'string' ? hexToArray(utf8ToHex(msg)) : Uint8Array.from(msg)
   const publicKeyPoint = typeof publicKey === 'string' ? sm2Curve.ProjectivePoint.fromHex(publicKey) :
@@ -29,6 +31,7 @@ export function doEncrypt(msg: string | Uint8Array, publicKey: string | ProjPoin
 
   // c1 = k * G
   let c1 = keypair.publicKey
+
   if (c1.length > 128) c1 = c1.substring(c1.length - 128)
   const p = publicKeyPoint.multiply(k)
   
@@ -41,7 +44,13 @@ export function doEncrypt(msg: string | Uint8Array, publicKey: string | ProjPoin
 
   xorCipherStream(x2, y2, msgArr)
   const c2 = bytesToHex(msgArr)
-
+  if (options?.asn1) {
+    const point = sm2Curve.ProjectivePoint.fromHex(keypair.publicKey)
+    const encode = cipherMode === C1C2C3 ? 
+     encodeEnc(point.x, point.y, c2, c3) :
+     encodeEnc(point.x, point.y, c3, c2)
+    return encode
+  }
   return cipherMode === C1C2C3 ? c1 + c2 + c3 : c1 + c3 + c2
 }
 
@@ -78,26 +87,45 @@ function xorCipherStream(x2: Uint8Array, y2: Uint8Array, msg: Uint8Array) {
  */
 export function doDecrypt(encryptData: string, privateKey: string, cipherMode?: number, options?: {
   output: 'array'
+  asn1?: boolean
 }): Uint8Array
 export function doDecrypt(encryptData: string, privateKey: string, cipherMode?: number, options?: {
-  output: 'string'
+  output: 'string',
+  asn1?: boolean
 }): string
 export function doDecrypt(encryptData: string, privateKey: string, cipherMode = 1, {
   output = 'string',
+  asn1 = false,
 } = {}) {
   const privateKeyInteger = utils.hexToNumber(privateKey)
 
-  let c3 = encryptData.substring(128, 128 + 64)
-  let c2 = encryptData.substring(128 + 64)
+  let c1: ProjPointType<bigint>
+  let c2: string
+  let c3: string
+  
 
-  if (cipherMode === C1C2C3) {
-    c3 = encryptData.substring(encryptData.length - 64)
-    c2 = encryptData.substring(128, encryptData.length - 64)
+  if (asn1) {
+    const {x, y, cipher, hash} = decodeEnc(encryptData)
+    c1 = sm2Curve.ProjectivePoint.fromAffine({ x, y })
+    c3 = hash
+    c2 = cipher
+    if (cipherMode === C1C2C3) {
+      [c2, c3] = [c3, c2]
+    }
+  } else {
+    // c1c3c2
+    c1 = sm2Curve.ProjectivePoint.fromHex('04' + encryptData.substring(0, 128))!
+    c3 = encryptData.substring(128, 128 + 64)
+    c2 = encryptData.substring(128 + 64)
+  
+    if (cipherMode === C1C2C3) {
+      c3 = encryptData.substring(encryptData.length - 64)
+      c2 = encryptData.substring(128, encryptData.length - 64)
+    }
   }
+  
 
   const msg = hexToArray(c2)
-  const c1 = sm2Curve.ProjectivePoint.fromHex('04' + encryptData.substring(0, 128))!
-
   const p = c1.multiply(privateKeyInteger)
   const x2 = hexToArray(leftPad(utils.numberToHexUnpadded(p.x), 64))
   const y2 = hexToArray(leftPad(utils.numberToHexUnpadded(p.y), 64))
@@ -105,7 +133,7 @@ export function doDecrypt(encryptData: string, privateKey: string, cipherMode = 
   xorCipherStream(x2, y2, msg)
   // c3 = hash(x2 || msg || y2)
   const checkC3 = arrayToHex(Array.from(sm3(utils.concatBytes(x2, msg, y2))))
-
+  
   if (checkC3 === c3.toLowerCase()) {
     return output === 'array' ? msg : arrayToUtf8(msg)
   } else {

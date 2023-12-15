@@ -1,4 +1,5 @@
 import { sm2 } from '@/index'
+import { arrayToHex, hexToArray } from '@/sm2'
 import { expect, it, describe, beforeEach } from 'vitest'
 
 const cipherMode = 1 // 1 - C1C3C2，0 - C1C2C3
@@ -92,6 +93,36 @@ describe('sm2: encrypt and decrypt data', () => {
         }
     });
 })
+
+
+describe('sm2: encrypt and decrypt data using asn1 encoding', () => {
+    it('decrypted data should be correct', () => {
+        const input = 'aabbccdd'
+        const res = sm2.doEncrypt(hexToArray(input), '049812a275eca335e85998eb4030a6cc9e88a098010bdbfc134b26e29c43253439d3821ef18e69e0813bcc55eee7dc9163f1edb81ad2032b20cbdf1408897faaac', 1, {
+            asn1: true,
+        })
+        // console.log('res', res)
+        const dec = sm2.doDecrypt(res, '75b25a5d6101013e9be25816f81cf1f64bf78ea8383b32d61f5b26e6f1429e70', 1, {
+            output: 'array',
+            asn1: true,
+        })
+        expect(arrayToHex([...dec])).toBe(input)
+    })
+    it('decrypted data should be correct: c1c2c3', () => {
+        const input = 'aabbccdd'
+        const res = sm2.doEncrypt(hexToArray(input), '049812a275eca335e85998eb4030a6cc9e88a098010bdbfc134b26e29c43253439d3821ef18e69e0813bcc55eee7dc9163f1edb81ad2032b20cbdf1408897faaac', 0, {
+            asn1: true,
+        })
+        // console.log('res', res)
+        const dec = sm2.doDecrypt(res, '75b25a5d6101013e9be25816f81cf1f64bf78ea8383b32d61f5b26e6f1429e70', 0, {
+            output: 'array',
+            asn1: true,
+        })
+        expect(arrayToHex([...dec])).toBe(input)
+    })
+
+})
+
 
 describe('sm2: sign data and verify sign', () => {
     it('signature and generate ec point', ({ unCompressedPublicKey, compressedPublicKey, privateKey }) => {
