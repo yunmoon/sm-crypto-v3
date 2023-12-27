@@ -14,3 +14,7 @@ benchmark
 .babelrc
 .eslintrc.js
 pnpm-lock.yaml
+*.config.ts
+*.config.js
+tsconfig.json
+src
