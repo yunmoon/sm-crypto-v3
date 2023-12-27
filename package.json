@@ -14,7 +14,7 @@
     "build-mp": "tsup --config=tsup.config.miniprogram.ts",
     "watch": "tsup --watch",
     "test": "vitest",
-    "release": "npm run build && standard-version && git push --follow-tags origin master",
+    "release": "npm run prerelease && standard-version && git push --follow-tags origin master",
     "coverage": "vitest run --coverage"
   },
   "repository": {
