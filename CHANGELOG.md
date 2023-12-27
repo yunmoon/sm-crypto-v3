@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.9.0](https://github.com/Cubelrti/sm-crypto-v2/compare/v1.7.0...v1.9.0) (2023-12-27)
+
+
+### Features
+
+* **sm2:** support asn1 der encoded encryption/decryption ([f08b9fd](https://github.com/Cubelrti/sm-crypto-v2/commit/f08b9fd5b64a2a257d41694c1858d7a6b07326ae))
+* support miniprogram build ([bb4dddc](https://github.com/Cubelrti/sm-crypto-v2/commit/bb4dddcb4935299fe6db82912f393aa427961e40))
+
 ## [1.8.0](https://github.com/Cubelrti/sm-crypto-v2/compare/v1.7.0...v1.8.0) (2023-12-15)
 
 
