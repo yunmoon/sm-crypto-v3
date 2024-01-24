@@ -1,8 +1,5 @@
-# sm-crypto-v2
+# sm-crypto-v3
 
-[![npm version](https://badge.fury.io/js/sm-crypto-v2.svg)](https://www.npmjs.com/package/sm-crypto-v2)
-[![status](https://img.shields.io/github/actions/workflow/status/cubelrti/sm-crypto-v2/test.yml?branch=master)](https://github.com/cubelrti/sm-crypto-v2/actions)
-[![cov](https://cubelrti.github.io/sm-crypto-v2/badges/coverage.svg)](https://github.com/cubelrti/sm-crypto-v2/actions)
 
 国密算法 sm2、sm3 和 sm4 的 JavaScript 实现。
 
@@ -22,7 +19,7 @@
 ## 安装
 
 ```bash
-npm install --save sm-crypto-v2
+npm install --save sm-crypto-v3
 ```
 
 ## sm2
@@ -30,7 +27,7 @@ npm install --save sm-crypto-v2
 ### 获取密钥对
 
 ```js
-import { sm2 } from 'sm-crypto-v2'
+import { sm2 } from 'sm-crypto-v3'
 
 let keypair = sm2.generateKeyPairHex()
 
@@ -55,7 +52,7 @@ verifyResult = sm2.verifyPublicKey(compressedPublicKey) // 验证公钥
 ### 加密解密
 
 ```js
-import { sm2 } from 'sm-crypto-v2'
+import { sm2 } from 'sm-crypto-v3'
 const cipherMode = 1 // 1 - C1C3C2，0 - C1C2C3，默认为1
 // 支持使用 asn1 对加密结果进行编码，在 options 参数中传入 { asn1: true } 即可，默认不开启
 let encryptData = sm2.doEncrypt(msgString, publicKey, cipherMode, { asn1: false }) // 加密结果
@@ -72,7 +69,7 @@ decryptData = sm2.doDecrypt(encryptData, privateKey, cipherMode, {output: 'array
 > ps：理论上来说，只做纯签名是最快的。
 
 ```js
-import { sm2 } from 'sm-crypto-v2'
+import { sm2 } from 'sm-crypto-v3'
 // 纯签名 + 生成椭圆曲线点
 let sigValueHex = sm2.doSignature(msg, privateKey) // 签名
 let verifyResult = sm2.doVerifySignature(msg, sigValueHex, publicKey) // 验签结果
@@ -125,14 +122,14 @@ let verifyResult6 = sm2.doVerifySignature(msgString, sigValueHex6, publicKey, {
 ### 获取椭圆曲线点
 
 ```js
-import { sm2 } from 'sm-crypto-v2'
+import { sm2 } from 'sm-crypto-v3'
 let point = sm2.getPoint() // 获取一个椭圆曲线点，可在sm2签名时传入
 ```
 
 ### 预计算公钥
 
 ```js
-import { sm2 } from 'sm-crypto-v2'
+import { sm2 } from 'sm-crypto-v3'
 let keypair = sm2.generateKeyPairHex()
 
 const precomputedPublicKey = sm2.precomputePublicKey(keypair.publicKey)
@@ -147,7 +144,7 @@ let verifyResult4 = sm2.doVerifySignature(msg, sigValueHex4, precomputedPublicKe
 ## sm3
 
 ```js
-import { sm3 } from 'sm-crypto-v2'
+import { sm3 } from 'sm-crypto-v3'
 let hashData = sm3('abc') // 杂凑
 
 // hmac
@@ -156,12 +153,40 @@ hashData = sm3('abc', {
 })
 ```
 
+支持大文件分片处理
+
+```js
+import { SM3, bytesToHex } from 'sm-crypto-v3'
+import { join } from "node:path";
+import { createReadStream } from "node:fs";
+async function test(){
+  const sm3 = new SM3();
+  let result;
+  await new Promise<void>((resolve) => {
+    const readStream = createReadStream(
+      join(__dirname, "./test.txt"),
+      {
+        highWaterMark: 16 * 1024
+      }
+    );
+    readStream.on("data", (chunk) => {
+      sm3.update(chunk);
+    });
+    readStream.on("end", () => {
+      result = sm3.digest();
+      resolve();
+    });
+  });
+  console.log(bytesToHex(result));
+}
+```
+
 ## sm4
 
 ### 加密
 
 ```js
-import { sm4 } from 'sm-crypto-v2'
+import { sm4 } from 'sm-crypto-v3'
 const msg = 'hello world! 我是 juneandgreen.' // 可以为 utf8 串或字节数组
 const key = '0123456789abcdeffedcba9876543210' // 可以为 16 进制串或字节数组，要求为 128 比特
 
@@ -174,7 +199,7 @@ let encryptData = sm4.encrypt(msg, key, {mode: 'cbc', iv: 'fedcba987654321001234
 ### 解密
 
 ```js
-import { sm4 } from 'sm-crypto-v2'
+import { sm4 } from 'sm-crypto-v3'
 const encryptData = '0e395deb10f6e8a17e17823e1fd9bd98a1bff1df508b5b8a1efb79ec633d1bb129432ac1b74972dbe97bab04f024e89c' // 可以为 16 进制串或字节数组
 const key = '0123456789abcdeffedcba9876543210' // 可以为 16 进制串或字节数组，要求为 128 比特
 
@@ -187,7 +212,7 @@ let decryptData = sm4.decrypt(encryptData, key, {mode: 'cbc', iv: 'fedcba9876543
 ### 密钥交换
 
 ```js
-import { sm2 } from 'sm-crypto-v2'
+import { sm2 } from 'sm-crypto-v3'
 
 const keyPairA = sm2.generateKeyPairHex() // A 的秘钥对
 const keyPairB = sm2.generateKeyPairHex() // B 的秘钥对
@@ -212,6 +237,7 @@ const sharedKeyFromB = sm2.calculateSharedKey(keyPairB, ephemeralKeypairB, keyPa
 ## 其他实现
 
 * 原 js 版本：[https://github.com/JuneAndGreen/sm-crypto](https://github.com/JuneAndGreen/sm-crypto)
+* 原 ts 版本：[https://github.com/Cubelrti/sm-crypto-v2](https://github.com/Cubelrti/sm-crypto-v2)
 * 小程序移植版：[https://github.com/wechat-miniprogram/sm-crypto](https://github.com/wechat-miniprogram/sm-crypto)
 * java 实现（感谢 @antherd 提供）：[https://github.com/antherd/sm-crypto](https://github.com/antherd/sm-crypto)
 * dart 实现（感谢 @luckykellan 提供）：[https://github.com/luckykellan/dart_sm](https://github.com/luckykellan/dart_sm)
@@ -220,7 +246,7 @@ const sharedKeyFromB = sm2.calculateSharedKey(keyPairB, ephemeralKeypairB, keyPa
 
 CPU: Apple M2
 
-| Operation          | sm-crypto    | sm-crypto-v2 | Difference (in times) |
+| Operation          | sm-crypto    | sm-crypto-v3 | Difference (in times) |
 |--------------------|--------------|--------------|-----------------------|
 | sm2 generateKeyPair| 148 ops/sec  | 3,452 ops/sec| 23.3x                 |
 | sm2 encrypt        | 76 ops/sec   | 304 ops/sec  | 4x                    |
@@ -233,7 +259,7 @@ CPU: Apple M2
 
 内存：
 
-| Metric             | sm-crypto    | sm-crypto-v2 | Difference            |
+| Metric             | sm-crypto    | sm-crypto-v3 | Difference            |
 |--------------------|--------------|--------------|-----------------------|
 | RAM (rss)          | 57.9mb       | 57.7mb       | -0.2mb                |
 | RAM (heap)         | 16.6mb       | 16.6mb       | 0mb                   |

@@ -1,12 +1,24 @@
 // import assert from './_assert.js';
-import { Hash, createView, Input, toBytes, wrapConstructor } from '../sm3/utils.js';
+import {
+  Hash,
+  createView,
+  Input,
+  toBytes,
+  wrapConstructor
+} from "../sm3/utils.js";
 
-const BoolA = (A: number, B: number, C: number) => ((A & B) | (A & C)) | (B & C)
-const BoolB = (A: number, B: number, C: number) => ((A ^ B) ^ C)
-const BoolC = (A: number, B: number, C: number) => (A & B) | ((~A) & C)
+const BoolA = (A: number, B: number, C: number) => (A & B) | (A & C) | (B & C);
+const BoolB = (A: number, B: number, C: number) => A ^ B ^ C;
+const BoolC = (A: number, B: number, C: number) => (A & B) | (~A & C);
 // Polyfill for Safari 14
-function setBigUint64(view: DataView, byteOffset: number, value: bigint, isLE: boolean): void {
-  if (typeof view.setBigUint64 === 'function') return view.setBigUint64(byteOffset, value, isLE);
+function setBigUint64(
+  view: DataView,
+  byteOffset: number,
+  value: bigint,
+  isLE: boolean
+): void {
+  if (typeof view.setBigUint64 === "function")
+    return view.setBigUint64(byteOffset, value, isLE);
   const _32n = BigInt(32);
   const _u32_max = BigInt(0xffffffff);
   const wh = Number((value >> _32n) & _u32_max);
@@ -21,31 +33,31 @@ function setBigUint64(view: DataView, byteOffset: number, value: bigint, isLE: b
  * 循环左移
  */
 export function rotl(x: number, n: number) {
-  const s = n & 31
-  return (x << s) | (x >>> (32 - s))
+  const s = n & 31;
+  return (x << s) | (x >>> (32 - s));
 }
 
 /**
  * 二进制异或运算
  */
 function xor(x: Uint8Array, y: Uint8Array) {
-  const result = new Uint8Array(x.length)
-  for (let i = x.length - 1; i >= 0; i--) result[i] = (x[i] ^ y[i]) & 0xff
-  return result
+  const result = new Uint8Array(x.length);
+  for (let i = x.length - 1; i >= 0; i--) result[i] = (x[i] ^ y[i]) & 0xff;
+  return result;
 }
 
 /**
  * 压缩函数中的置换函数 P0(X) = X xor (X <<< 9) xor (X <<< 17)
  */
 function P0(X: number) {
-  return (X ^ rotl(X, 9)) ^ rotl(X, 17)
+  return X ^ rotl(X, 9) ^ rotl(X, 17);
 }
 
 /**
  * 消息扩展中的置换函数 P1(X) = X xor (X <<< 15) xor (X <<< 23)
  */
 function P1(X: number) {
-  return (X ^ rotl(X, 15)) ^ rotl(X, 23)
+  return X ^ rotl(X, 15) ^ rotl(X, 23);
 }
 
 // from noble-hashes (https://github.com/paulmillr/noble-hashes#hmac)
@@ -85,7 +97,8 @@ export abstract class SHA2<T extends SHA2<T>> extends Hash<T> {
       // Fast path: we have at least one block in input, cast it to view and process
       if (take === blockLen) {
         const dataView = createView(data);
-        for (; blockLen <= len - pos; pos += blockLen) this.process(dataView, pos);
+        for (; blockLen <= len - pos; pos += blockLen)
+          this.process(dataView, pos);
         continue;
       }
       buffer.set(data.subarray(pos, pos + take), this.pos);
@@ -125,10 +138,11 @@ export abstract class SHA2<T extends SHA2<T>> extends Hash<T> {
     const oview = createView(out);
     const len = this.outputLen;
     // NOTE: we do division by 4 later, which should be fused in single op with modulo by JIT
-    if (len % 4) throw new Error('_sha2: outputLen should be aligned to 32bit');
+    if (len % 4) throw new Error("_sha2: outputLen should be aligned to 32bit");
     const outLen = len / 4;
     const state = this.get();
-    if (outLen > state.length) throw new Error('_sha2: outputLen bigger than state');
+    if (outLen > state.length)
+      throw new Error("_sha2: outputLen bigger than state");
     for (let i = 0; i < outLen; i++) oview.setUint32(4 * i, state[i], isLE);
   }
   digest() {
@@ -151,14 +165,17 @@ export abstract class SHA2<T extends SHA2<T>> extends Hash<T> {
   }
 }
 
-const IV = new Uint32Array([0x7380166f, 0x4914b2b9, 0x172442d7, 0xda8a0600, 0xa96f30bc, 0x163138aa, 0xe38dee4d, 0xb0fb0e4e])
-const SM3_W = new Uint32Array(68)
-const SM3_M = new Uint32Array(64)
+const IV = new Uint32Array([
+  0x7380166f, 0x4914b2b9, 0x172442d7, 0xda8a0600, 0xa96f30bc, 0x163138aa,
+  0xe38dee4d, 0xb0fb0e4e
+]);
+const SM3_W = new Uint32Array(68);
+const SM3_M = new Uint32Array(64);
 
-const T1 = 0x79cc4519
-const T2 = 0x7a879d8a
+const T1 = 0x79cc4519;
+const T2 = 0x7a879d8a;
 
-class SM3 extends SHA2<SM3> {
+export class SM3 extends SHA2<SM3> {
   // We cannot use array here since array allows indexing by variable
   // which means optimizer/compiler cannot use registers.
   A = IV[0] | 0;
@@ -173,7 +190,16 @@ class SM3 extends SHA2<SM3> {
   constructor() {
     super(64, 32, 8, false);
   }
-  protected get(): [number, number, number, number, number, number, number, number] {
+  protected get(): [
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number
+  ] {
     const { A, B, C, D, E, F, G, H } = this;
     return [A, B, C, D, E, F, G, H];
   }
@@ -192,32 +218,38 @@ class SM3 extends SHA2<SM3> {
   }
   protected process(view: DataView, offset: number): void {
     // Extend the first 16 words into the remaining 48 words w[16..63] of the message schedule array
-    for (let i = 0; i < 16; i++, offset += 4) SM3_W[i] = view.getUint32(offset, false);
+    for (let i = 0; i < 16; i++, offset += 4)
+      SM3_W[i] = view.getUint32(offset, false);
     for (let i = 16; i < 68; i++) {
-      SM3_W[i] = (P1((SM3_W[i- 16] ^ SM3_W[i - 9]) ^ rotl(SM3_W[i - 3], 15)) ^ rotl(SM3_W[i - 13], 7)) ^ SM3_W[i - 6]
+      SM3_W[i] =
+        P1(SM3_W[i - 16] ^ SM3_W[i - 9] ^ rotl(SM3_W[i - 3], 15)) ^
+        rotl(SM3_W[i - 13], 7) ^
+        SM3_W[i - 6];
     }
     for (let i = 0; i < 64; i++) {
-      SM3_M[i] = SM3_W[i] ^ SM3_W[i + 4]
+      SM3_M[i] = SM3_W[i] ^ SM3_W[i + 4];
     }
     // Compression function main loop, 64 rounds
     let { A, B, C, D, E, F, G, H } = this;
     for (let j = 0; j < 64; j++) {
-      let small = j >= 0 && j <= 15
-      let T = small ? T1 : T2
-      let SS1 = rotl(rotl(A, 12) + E + rotl(T, j), 7)
-      let SS2 = SS1 ^ rotl(A, 12)
+      let small = j >= 0 && j <= 15;
+      let T = small ? T1 : T2;
+      let SS1 = rotl(rotl(A, 12) + E + rotl(T, j), 7);
+      let SS2 = SS1 ^ rotl(A, 12);
 
-      let TT1 = ((small ? BoolB(A, B, C) : BoolA(A, B, C)) + D + SS2 + SM3_M[j]) | 0
-      let TT2 = ((small ? BoolB(E, F, G) : BoolC(E, F, G)) + H + SS1 + SM3_W[j]) | 0
+      let TT1 =
+        ((small ? BoolB(A, B, C) : BoolA(A, B, C)) + D + SS2 + SM3_M[j]) | 0;
+      let TT2 =
+        ((small ? BoolB(E, F, G) : BoolC(E, F, G)) + H + SS1 + SM3_W[j]) | 0;
 
-      D = C
-      C = rotl(B, 9)
-      B = A
-      A = TT1
-      H = G
-      G = rotl(F, 19)
-      F = E
-      E = P0(TT2)
+      D = C;
+      C = rotl(B, 9);
+      B = A;
+      A = TT1;
+      H = G;
+      G = rotl(F, 19);
+      F = E;
+      E = P0(TT2);
     }
     // Add the compressed chunk to the current hash value
     A = (A ^ this.A) | 0;
@@ -238,4 +270,5 @@ class SM3 extends SHA2<SM3> {
     this.buffer.fill(0);
   }
 }
+
 export const sm3 = wrapConstructor(() => new SM3());
