@@ -5,6 +5,17 @@
 // Web: globalThis.crypto
 // Node: async import("crypto").webcrypto
 // Mini Program: wx.getRandomValues
+
+// global fallback for Node.js 10 (where globalThis is not defined)
+declare var self: any;
+declare var window: any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const _globalThis: any =
+  typeof globalThis !== 'undefined' ? globalThis :
+  typeof self !== 'undefined' ? self :
+  typeof window !== 'undefined' ? window :
+  typeof global !== 'undefined' ? global :
+  {};
 declare module wx {
   function getRandomValues(options: {
     length: number;
@@ -16,14 +27,14 @@ const DEFAULT_PRNG_POOL_SIZE = 16384
 let prngPool = new Uint8Array(0)
 let _syncCrypto: typeof import('crypto')['webcrypto']
 export async function initRNGPool() {
-  if ('crypto' in globalThis) {
-    _syncCrypto = globalThis.crypto
+  if ('crypto' in _globalThis) {
+    _syncCrypto = _globalThis.crypto
     return // no need to use pooling
   }
   if (prngPool.length > DEFAULT_PRNG_POOL_SIZE / 2) return // there is sufficient number
   // we always populate full pool size
   // since numbers may be consumed during micro tasks.
-  if ('wx' in globalThis && 'getRandomValues' in globalThis.wx) {
+  if ('wx' in _globalThis && 'getRandomValues' in _globalThis.wx) {
     prngPool = await new Promise(r => {
       wx.getRandomValues({
         length: DEFAULT_PRNG_POOL_SIZE,
@@ -36,8 +47,8 @@ export async function initRNGPool() {
     // check if node or browser, use webcrypto if available
     try {
       // node 19+ and browser
-      if (globalThis.crypto) {
-        _syncCrypto = globalThis.crypto
+      if (_globalThis.crypto) {
+        _syncCrypto = _globalThis.crypto
       } else {
         // node below 19
         const crypto = await import(/* webpackIgnore: true */ 'crypto');
