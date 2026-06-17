@@ -105,8 +105,12 @@ export function doDecrypt(
   encryptData: string,
   privateKey: string,
   cipherMode = 1,
-  { output = "string", asn1 = false } = {}
-) {
+  options?: {
+    output?: "string" | "array";
+    asn1?: boolean;
+  }
+): string | Uint8Array {
+  const { output = "string" as "string" | "array", asn1 = false } = options || {};
   const privateKeyInteger = utils.hexToNumber(privateKey);
 
   let c1: ProjPointType<bigint>;
@@ -147,7 +151,7 @@ export function doDecrypt(
   if (checkC3 === c3.toLowerCase()) {
     return output === "array" ? msg : arrayToUtf8(msg);
   } else {
-    return output === "array" ? [] : "";
+    return output === "array" ? (new Uint8Array() as Uint8Array) : "";
   }
 }
 
