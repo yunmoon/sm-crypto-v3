@@ -50,15 +50,21 @@ export async function initRNGPool() {
         // node 19+ and browser
         _syncCrypto = _globalThis.crypto
       } else {
-        // node below 19, try importing crypto module
-        const crypto = await import(/* webpackIgnore: true */ 'crypto');
-        if (crypto.webcrypto) {
-          _syncCrypto = crypto.webcrypto
+        // Node.js: try require (sync) then fallback to dynamic import
+        let nodeCrypto: typeof import('crypto');
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          nodeCrypto = require('crypto');
+        } catch {
+          nodeCrypto = await import(/* webpackIgnore: true */ 'crypto') as typeof import('crypto');
+        }
+        if (nodeCrypto.webcrypto) {
+          _syncCrypto = nodeCrypto.webcrypto
         } else {
           // node < 15, use crypto.randomBytes as fallback
           _syncCrypto = {
             getRandomValues(array: Uint8Array) {
-              const buf = crypto.randomBytes(array.length);
+              const buf = nodeCrypto.randomBytes(array.length);
               array.set(buf);
               return array;
             }
@@ -69,7 +75,8 @@ export async function initRNGPool() {
       _syncCrypto.getRandomValues(array);
       prngPool = array;
     } catch (error) {
-      throw new Error('no available csprng, abort.');
+      // provide more details for debugging
+      throw new Error('no available csprng, abort: ' + (error && (error as Error).message || String(error)));
     }
   }
 }
