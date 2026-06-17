@@ -25,7 +25,7 @@ declare module wx {
 
 const DEFAULT_PRNG_POOL_SIZE = 16384
 let prngPool = new Uint8Array(0)
-let _syncCrypto: typeof import('crypto')['webcrypto']
+let _syncCrypto: { getRandomValues: (array: Uint8Array) => Uint8Array }
 export async function initRNGPool() {
   if ('crypto' in _globalThis) {
     _syncCrypto = _globalThis.crypto
@@ -46,13 +46,24 @@ export async function initRNGPool() {
   } else {
     // check if node or browser, use webcrypto if available
     try {
-      // node 19+ and browser
       if (_globalThis.crypto) {
+        // node 19+ and browser
         _syncCrypto = _globalThis.crypto
       } else {
-        // node below 19
+        // node below 19, try importing crypto module
         const crypto = await import(/* webpackIgnore: true */ 'crypto');
-        _syncCrypto = crypto.webcrypto
+        if (crypto.webcrypto) {
+          _syncCrypto = crypto.webcrypto
+        } else {
+          // node < 15, use crypto.randomBytes as fallback
+          _syncCrypto = {
+            getRandomValues(array: Uint8Array) {
+              const buf = crypto.randomBytes(array.length);
+              array.set(buf);
+              return array;
+            }
+          }
+        }
       }
       const array = new Uint8Array(DEFAULT_PRNG_POOL_SIZE);
       _syncCrypto.getRandomValues(array);
