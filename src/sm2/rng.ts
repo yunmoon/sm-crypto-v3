@@ -55,7 +55,7 @@ export async function initRNGPool() {
         try {
           // eslint-disable-next-line @typescript-eslint/no-var-requires
           nodeCrypto = require('crypto');
-        } catch {
+        } catch (_e) {
           nodeCrypto = await import(/* webpackIgnore: true */ 'crypto') as typeof import('crypto');
         }
         if (nodeCrypto.webcrypto) {
