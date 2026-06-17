@@ -9,7 +9,7 @@ export default defineConfig({
   // will be stripped if minify.
   minify: false,
   format: ['esm', 'cjs'],
-  target: 'es2020',
+  target: 'es2019',
   tsconfig: 'tsconfig.json',
   esbuildOptions(options) {
     options.define.__BUILD_TS__ = Date.now().toString()
