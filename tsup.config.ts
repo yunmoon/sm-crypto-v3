@@ -10,6 +10,7 @@ export default defineConfig({
   minify: false,
   format: ['esm', 'cjs'],
   target: 'es2019',
+  noExternal: ['@noble/curves', '@noble/ciphers', '@noble/hashes'],
   tsconfig: 'tsconfig.json',
   esbuildOptions(options) {
     options.define.__BUILD_TS__ = Date.now().toString()
