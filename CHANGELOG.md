@@ -2,6 +2,84 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.15.1](https://github.com/Cubelrti/sm-crypto-v2/compare/v1.15.0...v1.15.1) (2025-12-10)
+
+
+### Bug Fixes
+
+* **sm2:** correct nHexLength calculation in ASN.1 encoding ([0d6ba36](https://github.com/Cubelrti/sm-crypto-v2/commit/0d6ba36ce3f8269f63a1fbfd3d862d2b0e5d7fd4))
+
+## [1.15.0](https://github.com/Cubelrti/sm-crypto-v2/compare/v1.14.0...v1.15.0) (2025-10-11)
+
+
+### Features
+
+* support umd ([1fe0ddb](https://github.com/Cubelrti/sm-crypto-v2/commit/1fe0ddb4874ea7ade10beff7e43b7bb5f3335c71))
+
+## [1.14.0](https://github.com/Cubelrti/sm-crypto-v2/compare/v1.13.0...v1.14.0) (2025-09-05)
+
+
+### Features
+
+* **sm2:** expose ecdh interface and test cases ([68af176](https://github.com/Cubelrti/sm-crypto-v2/commit/68af176fd4013ea0e3165ad31c21f9cae590fcf7))
+
+## [1.13.0](https://github.com/Cubelrti/sm-crypto-v2/compare/v1.12.0...v1.13.0) (2025-07-15)
+
+
+### Features
+
+* downgrade to es2020 target ([3058285](https://github.com/Cubelrti/sm-crypto-v2/commit/305828570dc15fd686d04f3d85c37b978e8893c8))
+
+## [1.12.0](https://github.com/Cubelrti/sm-crypto-v2/compare/v1.11.0...v1.12.0) (2025-06-05)
+
+
+### Features
+
+* **utils:** ensure sm2 runs in environment don't have TextEncoder ([6b74b8d](https://github.com/Cubelrti/sm-crypto-v2/commit/6b74b8d4df3ead8e2c01587e3c13cdbbf9a27701))
+
+## [1.11.0](https://github.com/Cubelrti/sm-crypto-v2/compare/v1.10.1...v1.11.0) (2025-04-28)
+
+
+### Features
+
+* **sm3, kx:** expose kdf in sm3, added test case for parity ([f0091ca](https://github.com/Cubelrti/sm-crypto-v2/commit/f0091ca4a58a3369a83f274023268dfe2bda2794))
+
+### [1.10.1](https://github.com/Cubelrti/sm-crypto-v2/compare/v1.10.0...v1.10.1) (2025-04-27)
+
+
+### Bug Fixes
+
+* miniprogram build issue ([5e8ece4](https://github.com/Cubelrti/sm-crypto-v2/commit/5e8ece41dab69fc449675f9d46dfd25163538a78))
+* **sm2:** typing issue ([f368a72](https://github.com/Cubelrti/sm-crypto-v2/commit/f368a72cc354d0ec9601dda8cbd2590eb9e6c144))
+
+## [1.10.0](https://github.com/Cubelrti/sm-crypto-v2/compare/v1.9.3...v1.10.0) (2025-04-14)
+
+
+### Features
+
+* **sm4:** support gcm mode for `sm4` ([2c6a0df](https://github.com/Cubelrti/sm-crypto-v2/commit/2c6a0df8d591d802fd4816c6b1824e20e0b23e31))
+
+### [1.9.3](https://github.com/Cubelrti/sm-crypto-v2/compare/v1.9.2...v1.9.3) (2024-10-10)
+
+
+### Bug Fixes
+
+* **sm2:** utf8 to hex [#15](https://github.com/Cubelrti/sm-crypto-v2/issues/15) ([16a714a](https://github.com/Cubelrti/sm-crypto-v2/commit/16a714ad8775381c21b814fab6b1d57c263b3c65))
+
+### [1.9.2](https://github.com/Cubelrti/sm-crypto-v2/compare/v1.9.1...v1.9.2) (2024-08-16)
+
+
+### Bug Fixes
+
+* **sm4:** string type return ([406fa5a](https://github.com/Cubelrti/sm-crypto-v2/commit/406fa5a848015e3a02339f109f60ec1e8ec3fe8b))
+
+### [1.9.1](https://github.com/Cubelrti/sm-crypto-v2/compare/v1.9.0...v1.9.1) (2024-07-09)
+
+
+### Bug Fixes
+
+* **asn1:** correct the implementation of the long version of L encoding in asn.1 ([55569c5](https://github.com/Cubelrti/sm-crypto-v2/commit/55569c55235c0a82525b142ea9a4f8a2669654ce))
+
 ## [1.9.0](https://github.com/Cubelrti/sm-crypto-v2/compare/v1.7.0...v1.9.0) (2023-12-27)
 
 

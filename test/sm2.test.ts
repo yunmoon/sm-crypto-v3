@@ -96,17 +96,48 @@ describe('sm2: encrypt and decrypt data', () => {
 
 
 describe('sm2: encrypt and decrypt data using asn1 encoding', () => {
-    it('decrypted data should be correct', () => {
+    it('decrypted data should be correct (non asn.1)', () => {
+        const input = 'aabbccdd'
+        const res = sm2.doEncrypt(hexToArray(input), '049812a275eca335e85998eb4030a6cc9e88a098010bdbfc134b26e29c43253439d3821ef18e69e0813bcc55eee7dc9163f1edb81ad2032b20cbdf1408897faaac', 1, {
+            asn1: false,
+        })
+        // console.log('res', res)
+        const dec = sm2.doDecrypt(res, '75b25a5d6101013e9be25816f81cf1f64bf78ea8383b32d61f5b26e6f1429e70', 1, {
+            output: 'array',
+            asn1: false,
+        })
+        expect(arrayToHex([...dec])).toBe(input)
+    })
+    it('decrypted data should be correct (asn.1)', () => {
         const input = 'aabbccdd'
         const res = sm2.doEncrypt(hexToArray(input), '049812a275eca335e85998eb4030a6cc9e88a098010bdbfc134b26e29c43253439d3821ef18e69e0813bcc55eee7dc9163f1edb81ad2032b20cbdf1408897faaac', 1, {
             asn1: true,
         })
-        // console.log('res', res)
         const dec = sm2.doDecrypt(res, '75b25a5d6101013e9be25816f81cf1f64bf78ea8383b32d61f5b26e6f1429e70', 1, {
             output: 'array',
             asn1: true,
         })
         expect(arrayToHex([...dec])).toBe(input)
+        const input2 = 'xxxxx{"xx": "111","t": "1"}'
+        const res2 = sm2.doEncrypt(input2, '049812a275eca335e85998eb4030a6cc9e88a098010bdbfc134b26e29c43253439d3821ef18e69e0813bcc55eee7dc9163f1edb81ad2032b20cbdf1408897faaac', 1, {
+            asn1: true,
+        })
+        console.log(res2)
+        const dec2 = sm2.doDecrypt(res2, '75b25a5d6101013e9be25816f81cf1f64bf78ea8383b32d61f5b26e6f1429e70', 1, {
+            output: 'string',
+            asn1: true,
+        })
+        expect(dec2).toBe(input2)
+        // long ASN.1 encoded cipher value
+        const input3 = 'aabbccdd'.repeat(1000)
+        const res3 = sm2.doEncrypt(hexToArray(input3), '049812a275eca335e85998eb4030a6cc9e88a098010bdbfc134b26e29c43253439d3821ef18e69e0813bcc55eee7dc9163f1edb81ad2032b20cbdf1408897faaac', 1, {
+            asn1: true,
+        })
+        const dec3 = sm2.doDecrypt(res3, '75b25a5d6101013e9be25816f81cf1f64bf78ea8383b32d61f5b26e6f1429e70', 1, {
+            output: 'array',
+            asn1: true,
+        })
+        expect(arrayToHex([...dec3])).toBe(input3)
     })
     it('decrypted data should be correct: c1c2c3', () => {
         const input = 'aabbccdd'
@@ -263,5 +294,26 @@ describe('sm2: precomputed public key', () => {
         let sigValueHex = sm2.doSignature(msgString, ctx.privateKey)
         let verifyResult = sm2.doVerifySignature(msgString, sigValueHex, precomputedPublicKey)
         expect(verifyResult).toBe(true)
+    })
+})
+
+describe('sm2: chinese encoding', () => {
+    it('signature and verify correctly', (ctx) => {
+        let str = 'SM国密2'
+        let sigValueHex = sm2.doSignature(str, ctx.privateKey, {
+            hash: true,
+            der: true,
+        })
+        let verifyResult = sm2.doVerifySignature(str, sigValueHex, ctx.unCompressedPublicKey, {
+            der: true,
+            hash: true,
+        })
+        expect(verifyResult).toBe(true)
+        console.log({
+            str,
+            pk: ctx.unCompressedPublicKey,
+            sigValueHex,
+            verifyResult,
+        })
     })
 })

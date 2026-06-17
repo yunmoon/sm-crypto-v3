@@ -14,10 +14,21 @@ import { field, sm2Curve } from "./ec";
 import { ONE, ZERO } from "./bn";
 import { bytesToHex } from "@/sm3/utils";
 import { ProjPointType } from "@noble/curves/abstract/weierstrass";
+import { kdf } from "./kdf";
 
 export * from "./utils";
 export { initRNGPool } from "./rng";
 export { calculateSharedKey } from "./kx";
+
+const { getSharedSecret } = sm2Curve;
+export { getSharedSecret as ecdh };
+
+function xorCipherStream(x2: Uint8Array, y2: Uint8Array, msg: Uint8Array) {
+  const stream = kdf(utils.concatBytes(x2, y2), msg.length);
+  for (let i = 0, len = msg.length; i < len; i++) {
+    msg[i] ^= stream[i] & 0xff;
+  }
+}
 
 const C1C2C3 = 0;
 // a empty array, just make tsc happy
@@ -69,33 +80,6 @@ export function doEncrypt(
   return cipherMode === C1C2C3 ? c1 + c2 + c3 : c1 + c3 + c2;
 }
 
-function xorCipherStream(x2: Uint8Array, y2: Uint8Array, msg: Uint8Array) {
-  let ct = 1;
-  let offset = 0;
-  let t = EmptyArray;
-  const ctShift = new Uint8Array(4);
-  const nextT = () => {
-    // (1) Hai = hash(z || ct)
-    // (2) ct++
-    ctShift[0] = (ct >> 24) & 0x00ff;
-    ctShift[1] = (ct >> 16) & 0x00ff;
-    ctShift[2] = (ct >> 8) & 0x00ff;
-    ctShift[3] = ct & 0x00ff;
-    t = sm3(utils.concatBytes(x2, y2, ctShift));
-    ct++;
-    offset = 0;
-  };
-  nextT(); // 先生成 Ha1
-
-  for (let i = 0, len = msg.length; i < len; i++) {
-    // t = Ha1 || Ha2 || Ha3 || Ha4
-    if (offset === t.length) nextT();
-
-    // c2 = msg ^ t
-    msg[i] ^= t[offset++] & 0xff;
-  }
-}
-
 /**
  * 解密
  */
@@ -113,7 +97,7 @@ export function doDecrypt(
   privateKey: string,
   cipherMode?: number,
   options?: {
-    output: "string";
+    output?: "string";
     asn1?: boolean;
   }
 ): string;
@@ -189,7 +173,6 @@ export function doSignature(
   let { pointPool, der, hash, publicKey, userId } = options;
   let hashHex =
     typeof msg === "string" ? utf8ToHex(msg) : arrayToHex(Array.from(msg));
-
   if (hash) {
     // sm3杂凑
     publicKey = publicKey || getPublicKeyFromPrivateKey(privateKey);

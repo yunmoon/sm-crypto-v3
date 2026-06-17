@@ -1,9 +1,9 @@
-// import { sm3 } from '@/sm3'
 import { test, expect, describe, it } from "vitest";
 import { readFileSync, createReadStream } from "node:fs";
 import { join, resolve } from "node:path";
 import { sm3 } from "@/sm3";
 import { SM3 } from "@/sm2/sm3";
+import { kdf } from "@/index";
 import { bytesToHex } from "@/sm3/utils";
 import { concatBytes } from "@noble/curves/abstract/utils";
 test("sm3: must match the result", () => {
@@ -164,4 +164,10 @@ test("sm3: hmac", () => {
       key: bytes128
     })
   ).toBe("d374f8adb0e9d1f12de94c1406fe8b2d53f84129e033f0d269400de8e8e7ca1a");
+});
+
+test("sm3: kdf", () => {
+  const input = new Uint8Array(32);
+  const out = kdf(input, 16);
+  console.log("sm3KDF", bytesToHex(out));
 });
